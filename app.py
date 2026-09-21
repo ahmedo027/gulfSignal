@@ -26,7 +26,8 @@ def serp_jobs(loc):
  key=os.getenv('SERPAPI_KEY','').strip()
  if not key: return []
  try:
-  q=urllib.parse.urlencode({'engine':'google_jobs','q':'SOC Analyst cybersecurity','location':loc+' UAE','api_key':key,'hl':'en'})
+  place = {'Dubai':'Dubai, United Arab Emirates','Abu Dhabi':'Abu Dhabi, United Arab Emirates','UAE':'United Arab Emirates'}.get(loc,'United Arab Emirates')
+  q=urllib.parse.urlencode({'engine':'google_jobs','q':'SOC Analyst cybersecurity','location':place,'api_key':key,'hl':'en','no_cache':'true'})
   data=json.load(urllib.request.urlopen('https://serpapi.com/search.json?'+q,timeout=12)); out=[]
   for j in data.get('jobs_results',[]):
    apply=(j.get('apply_options') or [{}])[0].get('link') or j.get('share_link','')
