@@ -68,4 +68,4 @@ class H(BaseHTTPRequestHandler):
   if self.path=='/api/upload': return self.send(200,json.dumps({'skills':['siem','elastic','log analysis','alert triage','incident investigation','windows']}))
   return self.send(404,'Not found')
 if __name__=='__main__':
- init(); port=int(os.environ.get('PORT','8000')); print(f'GulfSignal running at http://localhost:{port}'); ThreadingHTTPServer(('127.0.0.1',port),H).serve_forever()
+ init(); port=int(os.environ.get('PORT','8000')); print(f'GulfSignal running on port {port}'); ThreadingHTTPServer(('0.0.0.0',port),H).serve_forever()
