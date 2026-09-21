@@ -1,0 +1,2 @@
+# GulfSignal MVP
+Run on Windows: install Python 3.10+, open PowerShell in this folder, run `python app.py`, then open http://localhost:8000. The app uses SQLite, seeded demo roles, transparent scoring, location filters, CV upload flow, direct company links, and application tracking. It runs without API keys and deliberately avoids LinkedIn scraping. Official Greenhouse/Lever adapters can be added in `app.py`.
