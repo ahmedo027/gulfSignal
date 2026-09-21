@@ -18,7 +18,7 @@ def score(j,skills):
  have={s.lower() for s in skills}; req=set(j['skills']); m=sorted(req&have); return round(35+65*len(m)/max(1,len(req))),m,sorted(req-have)
 def getjobs(loc,skills):
  c=db(); out=[]; source_jobs=live_jobs()+serp_jobs(loc)
- for i,j in enumerate(SEED+source_jobs,1):
+ for i,j in enumerate(source_jobs,1):
   if loc!='UAE' and loc.lower() not in j['location'].lower(): continue
   p,m,mi=score(j,skills); a=c.execute('SELECT status FROM applications WHERE job_id=?',(i,)).fetchone(); out.append({'id':i,**j,'match':p,'matched':m,'missing':mi,'status':a['status'] if a else 'Saved'})
  c.close(); return out
