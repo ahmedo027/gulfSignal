@@ -1,4 +1,4 @@
 {
   "project_id": "appgprj_6ab161c2a1588191a9050e448762e6d7",
-  "static": { "directory": "dist" }
+  "worker": { "entrypoint": "dist/server/index.js" }
 }
