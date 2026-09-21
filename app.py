@@ -52,7 +52,7 @@ def live_jobs():
  return out
 class H(BaseHTTPRequestHandler):
  def send(self,code,data,typ='application/json'):
-  b=data.encode() if isinstance(data,str) else data; self.send_response(code); self.send_header('Content-Type',typ); self.send_header('Content-Length',str(len(b))); self.end_headers(); self.wfile.write(b)
+  b=data.encode() if isinstance(data,str) else data; self.send_response(code); self.send_header('Content-Type',typ); self.send_header('Access-Control-Allow-Origin','*'); self.send_header('Content-Length',str(len(b))); self.end_headers(); self.wfile.write(b)
  def do_GET(self):
   p=urlparse(self.path)
   if p.path=='/api/jobs':
