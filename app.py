@@ -1,4 +1,4 @@
-import json, os, sqlite3, urllib.request, urllib.parse
+import json, os, sqlite3, urllib.request, urllib.parse, base64, re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 ROOT=os.path.dirname(__file__); DB=os.path.join(ROOT,'jobs.db')
@@ -66,7 +66,17 @@ class H(BaseHTTPRequestHandler):
   n=int(self.headers.get('Content-Length',0)); d=json.loads(self.rfile.read(n)) if self.path=='/api/status' else None
   if self.path=='/api/status':
    c=db(); c.execute('INSERT INTO applications(job_id,status,updated) VALUES(?,?,CURRENT_TIMESTAMP) ON CONFLICT(job_id) DO UPDATE SET status=excluded.status,updated=CURRENT_TIMESTAMP',(d['job_id'],d['status'])); c.commit(); c.close(); return self.send(200,'{"ok":true}')
-  if self.path=='/api/upload': return self.send(200,json.dumps({'skills':['siem','elastic','log analysis','alert triage','incident investigation','windows']}))
+  if self.path=='/api/upload':
+   try:
+    raw=json.loads(self.rfile.read(n)); text=''
+    if raw.get('name','').lower().endswith('.pdf'):
+     from pypdf import PdfReader
+     import io
+     text=' '.join((p.extract_text() or '') for p in PdfReader(io.BytesIO(base64.b64decode(raw.get('data','')))).pages)
+    else: text=base64.b64decode(raw.get('data','')).decode('utf8','ignore')
+    catalog=['siem','elastic','log analysis','alert triage','incident investigation','incident response','windows','active directory','edr','xdr','splunk','network security','threat hunting','ticketing']
+    return self.send(200,json.dumps({'skills':[s for s in catalog if re.search(re.escape(s),text,re.I)]}))
+   except Exception: return self.send(200,json.dumps({'skills':[]}))
   return self.send(404,'Not found')
 if __name__=='__main__':
  init(); port=int(os.environ.get('PORT','8000')); print(f'GulfSignal running on port {port}'); ThreadingHTTPServer(('0.0.0.0',port),H).serve_forever()
