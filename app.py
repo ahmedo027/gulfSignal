@@ -17,11 +17,22 @@ def init():
 def score(j,skills):
  have={s.lower() for s in skills}; req=set(j['skills']); m=sorted(req&have); return round(35+65*len(m)/max(1,len(req))),m,sorted(req-have)
 def getjobs(loc,skills):
- c=db(); out=[]; source_jobs=live_jobs()
+ c=db(); out=[]; source_jobs=live_jobs()+serp_jobs(loc)
  for i,j in enumerate(SEED+source_jobs,1):
   if loc!='UAE' and loc.lower() not in j['location'].lower(): continue
   p,m,mi=score(j,skills); a=c.execute('SELECT status FROM applications WHERE job_id=?',(i,)).fetchone(); out.append({'id':i,**j,'match':p,'matched':m,'missing':mi,'status':a['status'] if a else 'Saved'})
  c.close(); return out
+def serp_jobs(loc):
+ key=os.getenv('SERPAPI_KEY','').strip()
+ if not key: return []
+ try:
+  q=urllib.parse.urlencode({'engine':'google_jobs','q':'SOC Analyst cybersecurity','location':loc+' UAE','api_key':key,'hl':'en'})
+  data=json.load(urllib.request.urlopen('https://serpapi.com/search.json?'+q,timeout=12)); out=[]
+  for j in data.get('jobs_results',[]):
+   apply=(j.get('apply_options') or [{}])[0].get('link') or j.get('share_link','')
+   out.append({'title':j.get('title',''),'company':j.get('company_name',''),'location':j.get('location','UAE'),'source':'Google Jobs / SerpAPI','url':apply,'skills':['siem','incident response','log analysis']})
+  return out
+ except Exception: return []
 def live_jobs():
  out=[]; seen=set(); terms=('soc analyst','cybersecurity analyst','cyber security analyst','siem analyst','blue team','information security analyst','it security analyst','security operations')
  def add(j):
