@@ -69,11 +69,7 @@ class H(BaseHTTPRequestHandler):
   if self.path=='/api/upload':
    try:
     raw=json.loads(self.rfile.read(n)); text=''
-    if raw.get('name','').lower().endswith('.pdf'):
-     from pypdf import PdfReader
-     import io
-     text=' '.join((p.extract_text() or '') for p in PdfReader(io.BytesIO(base64.b64decode(raw.get('data','')))).pages)
-    else: text=base64.b64decode(raw.get('data','')).decode('utf8','ignore')
+    text=base64.b64decode(raw.get('data','')).decode('latin1','ignore')
     catalog=['siem','elastic','log analysis','alert triage','incident investigation','incident response','windows','active directory','edr','xdr','splunk','network security','threat hunting','ticketing']
     return self.send(200,json.dumps({'skills':[s for s in catalog if re.search(re.escape(s),text,re.I)]}))
    except Exception: return self.send(200,json.dumps({'skills':[]}))
