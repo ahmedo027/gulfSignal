@@ -1,4 +1,4 @@
-import json, os, sqlite3
+import json, os, sqlite3, urllib.request, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 ROOT=os.path.dirname(__file__); DB=os.path.join(ROOT,'jobs.db')
@@ -17,11 +17,28 @@ def init():
 def score(j,skills):
  have={s.lower() for s in skills}; req=set(j['skills']); m=sorted(req&have); return round(35+65*len(m)/max(1,len(req))),m,sorted(req-have)
 def getjobs(loc,skills):
- c=db(); out=[]
- for i,j in enumerate(SEED,1):
+ c=db(); out=[]; source_jobs=live_jobs()
+ for i,j in enumerate(SEED+source_jobs,1):
   if loc!='UAE' and loc.lower() not in j['location'].lower(): continue
   p,m,mi=score(j,skills); a=c.execute('SELECT status FROM applications WHERE job_id=?',(i,)).fetchone(); out.append({'id':i,**j,'match':p,'matched':m,'missing':mi,'status':a['status'] if a else 'Saved'})
  c.close(); return out
+def live_jobs():
+ out=[]; seen=set(); terms=('soc analyst','cybersecurity analyst','cyber security analyst','siem analyst','blue team','information security analyst','it security analyst','security operations')
+ def add(j):
+  key=(j['title'].lower(),j['company'].lower(),j['location'].lower())
+  if key in seen or not any(t in j['title'].lower() for t in terms): return
+  seen.add(key); out.append(j)
+ for board in [x.strip() for x in os.getenv('GREENHOUSE_BOARDS','').split(',') if x.strip()]:
+  try:
+   data=json.load(urllib.request.urlopen(f'https://boards-api.greenhouse.io/v1/boards/{urllib.parse.quote(board)}/jobs?content=true',timeout=8))
+   for j in data.get('jobs',[]): add({'title':j.get('title',''),'company':board,'location':(j.get('location') or {}).get('name','UAE'),'source':'Greenhouse','url':j.get('absolute_url',''),'skills':['siem','incident response','log analysis']})
+  except Exception: pass
+ for account in [x.strip() for x in os.getenv('LEVER_ACCOUNTS','').split(',') if x.strip()]:
+  try:
+   data=json.load(urllib.request.urlopen(f'https://api.lever.co/v0/postings/{urllib.parse.quote(account)}?mode=json',timeout=8))
+   for j in data if isinstance(data,list) else []: add({'title':j.get('text',''),'company':account,'location':(j.get('categories') or {}).get('location','UAE'),'source':'Lever','url':(j.get('hostedUrl') or ''),'skills':['siem','incident response','log analysis']})
+  except Exception: pass
+ return out
 class H(BaseHTTPRequestHandler):
  def send(self,code,data,typ='application/json'):
   b=data.encode() if isinstance(data,str) else data; self.send_response(code); self.send_header('Content-Type',typ); self.send_header('Content-Length',str(len(b))); self.end_headers(); self.wfile.write(b)
